@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SMS Phishing Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: radial-gradient(circle at center, #0b0c10, #1f2833, #000000);
+            color: #ffffff;
+            text-align: center;
+            padding-top: 60px;
+            background-attachment: fixed;
+        }
+
+        .container {
+            background: rgba(20, 20, 30, 0.9);
+            width: 500px;
+            margin: auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(0, 200, 255, 0.5);
+        }
+
+        h2 {
+            color: #66fcf1;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 90%;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 6px;
+            border: none;
+            outline: none;
+            resize: none;
+        }
+
+        .drop-zone {
+            margin: 15px auto;
+            padding: 25px;
+            border: 2px dashed #00c6ff;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: 0.3s;
+            color: #c5c6c7;
+        }
+
+        .drop-zone:hover {
+            background: rgba(0, 200, 255, 0.1);
+            border-color: #66fcf1;
+        }
+
+        .drop-zone.dragover {
+            background: rgba(0, 200, 255, 0.2);
+            border-color: #00ff00;
+        }
+
+        .drop-zone input {
+            display: none;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #66fcf1;
+        }
+
+        button {
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #007BFF, #00c6ff);
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 200, 255, 0.7);
+        }
+
+        #clearBtn {
+            margin-left: 10px;
+            background: #ff4444;
+        }
+
+        .safe { color: #00ff00; font-weight: bold; margin-top: 20px; }
+        .suspicious { color: #ffcc00; font-weight: bold; margin-top: 20px; }
+        .phishing { color: #ff4444; font-weight: bold; margin-top: 20px; }
+
+        .facts {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 200, 255, 0.3);
+        }
+
+        .facts h3 {
+            color: #45a29e;
+            margin-bottom: 15px;
+        }
+
+        .facts ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .facts li {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #c5c6c7;
+        }
+
+        .home-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #ff9800, #ff5722);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .home-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 152, 0, 0.7);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🌌 SMS Phishing Detection</h2>
+
+    <form method="POST" enctype="multipart/form-data" id="smsForm">
+        <!-- ✅ Textarea auto-filled with extracted SMS -->
+        <textarea name="sms" rows="6" id="smsBox"
+                  placeholder="Paste SMS here (Optional)">{{ sms }}</textarea>
+
+        <!-- ✅ Drag & Drop OR Click Upload -->
+        <div class="drop-zone" id="drop-zone">
+            <span>📂 Drag & Drop Screenshot Here or Click to Upload</span>
+            <input type="file" id="fileInput" name="screenshot" accept="image/*">
+            <div class="file-name" id="file-name"></div>
+        </div>
+
+        <button type="submit">🚀 Check SMS</button>
+        <button type="button" id="clearBtn">🗑 Clear All</button>
+    </form>
+    
+    {% if result %}
+        {% if "Safe" in result %}
+            <div class="safe">{{ result }} - Risk: {{ risk_percentage }}%</div>
+        {% elif "Suspicious" in result %}
+            <div class="suspicious">{{ result }} - Risk: {{ risk_percentage }}%</div>
+        {% else %}
+            <div class="phishing">{{ result }} - Risk: {{ risk_percentage }}%</div>
+        {% endif %}
+    {% endif %}
+
+    <!-- 🔭 SMS Security Facts Section -->
+    <div class="facts">
+        <h3>🔭 SMS Security Facts</h3>
+        <ul>
+            <li>📱 Smishing (SMS phishing) is rising worldwide.</li>
+            <li>🛰️ Fake delivery and bank alerts are common SMS scams.</li>
+            <li>🌍 Clicking unknown links in SMS can install malware.</li>
+            <li>☄️ Always verify sender numbers before responding.</li>
+        </ul>
+    </div>
+
+    <a href="/" class="home-btn">🏠 Home</a>
+</div>
+
+<script>
+    const dropZone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("fileInput");
+    const fileNameDisplay = document.getElementById("file-name");
+    const form = document.getElementById("smsForm");
+    const smsBox = document.getElementById("smsBox");
+    const clearBtn = document.getElementById("clearBtn");
+
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("dragover");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("dragover");
+
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            fileNameDisplay.textContent = "Selected: " + e.dataTransfer.files[0].name;
+        }
+    });
+
+    fileInput.addEventListener("change", () => {
+        if (fileInput.files.length) {
+            fileNameDisplay.textContent = "Selected: " + fileInput.files[0].name;
+        }
+    });
+
+    form.addEventListener("submit", function(e) {
+        const textValue = smsBox.value.trim();
+        const fileSelected = fileInput.files.length > 0;
+
+        if (!textValue && !fileSelected) {
+            e.preventDefault();
+            alert("Please enter SMS OR upload a screenshot.");
+        }
+    });
+
+    // ✅ Clear All button
+    clearBtn.addEventListener("click", () => {
+        smsBox.value = "";
+        fileInput.value = "";
+        fileNameDisplay.textContent = "";
+    });
+</script>
+
+</body>
+</html>
+
+
+
+
+
+

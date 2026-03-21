@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL Phishing Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: radial-gradient(circle at center, #0b0c10, #1f2833, #000000);
+            color: #ffffff;
+            text-align: center;
+            padding-top: 80px;
+            background-attachment: fixed;
+        }
+
+        .container {
+            background: rgba(20, 20, 30, 0.9);
+            width: 500px;
+            margin: auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(0, 200, 255, 0.5);
+        }
+
+        h2 {
+            color: #66fcf1;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 90%;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 6px;
+            border: none;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #007BFF, #00c6ff);
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 200, 255, 0.7);
+        }
+
+        .safe { color: #00ff00; font-weight: bold; }
+        .suspicious { color: #ffcc00; font-weight: bold; }
+        .phishing { color: #ff4444; font-weight: bold; }
+
+        .facts {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 200, 255, 0.3);
+        }
+
+        .facts h3 {
+            color: #45a29e;
+            margin-bottom: 15px;
+        }
+
+        .facts ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .facts li {
+            margin: 8px 0;
+            color: #c5c6c7;
+            font-size: 14px;
+        }
+
+        /* ✅ Home Button Style */
+        .home-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #ff9800, #ff5722);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .home-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 152, 0, 0.7);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🌌 URL Phishing Detection</h2>
+
+    <form method="POST">
+        <input type="text" name="url" placeholder="Enter URL here" required>
+        <br>
+        <button type="submit">🚀 Check URL</button>
+    </form>
+    
+    {% if result %}
+        {% if "Safe" in result %}
+            <div class="safe">{{ result }} - Risk: {{ risk_percentage }}%</div>
+        {% elif "Medium" in result %}
+            <div class="suspicious">{{ result }} - Risk: {{ risk_percentage }}%</div>
+        {% else %}
+            <div class="phishing">{{ result }} - Risk: {{ risk_percentage }}%</div>
+        {% endif %}
+    {% endif %}
+
+    <div class="facts">
+        <h3>🔭 Cybersecurity Facts</h3>
+        <ul>
+            <li>🌐 90% of phishing attacks start with an email link.</li>
+            <li>🛰️ Shortened URLs are often used to hide malicious sites.</li>
+            <li>🌍 Phishing costs businesses billions every year.</li>
+            <li>☄️ Always check the domain before entering credentials.</li>
+        </ul>
+    </div>
+
+    <!-- ✅ Home Button -->
+    <a href="/" class="home-btn">🏠 Home</a>
+</div>
+
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recovery Info</title>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #0b0c10, #1f2833, #000000);
+            font-family: 'Segoe UI', sans-serif;
+            color: #e0e0e0;
+            text-align: center;
+            padding: 40px;
+            background-attachment: fixed;
+        }
+
+        h2 {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+        }
+
+        form {
+            margin-top: 30px;
+        }
+
+        select, button {
+            background-color: #1a1a1a;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            margin: 10px;
+            outline: none;
+            transition: 0.3s;
+            text-shadow: 0 0 5px #00ffff;
+        }
+
+        select:hover, button:hover {
+            background-color: #00ffff;
+            color: #0d0d0d;
+            box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff;
+        }
+
+        h3 {
+            margin-top: 40px;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background-color: #1a1a1a;
+            border: 2px solid #ff00ff;
+            margin: 10px auto;
+            padding: 15px;
+            width: 60%;
+            border-radius: 10px;
+            color: #ff00ff;
+            text-shadow: 0 0 5px #ff00ff;
+            box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
+        }
+
+        /* ✅ Home Button Style */
+        .home-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #ff9800, #ff5722);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .home-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 152, 0, 0.7);
+        }
+
+        /* ✅ Cybercrime Link Style */
+        .cyber-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #00ffff;
+            text-decoration: none;
+            font-weight: bold;
+            text-shadow: 0 0 8px #00ffff;
+        }
+
+        .cyber-link:hover {
+            color: #ff00ff;
+            text-shadow: 0 0 12px #ff00ff;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>🌌 Phishing Recovery Info</h2>
+
+    <form method="POST">
+        <select name="type" required>
+            <option value="">-- Select What You Entered --</option>
+            <option value="password">Password Shared</option>
+            <option value="bank">Bank Details</option>
+            <option value="otp">OTP Shared</option>
+            <option value="device">Downloaded Suspicious File</option>
+        </select>
+
+        <button type="submit">🚀 Get Recovery Steps</button>
+    </form>
+
+    {% if steps %}
+        <h3>Recovery Steps:</h3>
+        <ul>
+            {% for step in steps %}
+                <li>{{ step }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <!-- ✅ Cybercrime Reporting Link -->
+    <a href="https://cybercrime.gov.in" target="_blank" class="cyber-link">🔒 Report to Cybercrime Portal</a>
+
+    <!-- ✅ Home Button -->
+    <br>
+    <a href="/" class="home-btn">🏠 Home</a>
+
+</body>
+</html>
+
