@@ -5,9 +5,19 @@ import tldextract
 import language_tool_python
 tool = language_tool_python.LanguageTool('en-US')
 import pytesseract
+import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
 
 from PIL import Image
+from Machine_learning.Features import extract_features ,extract_email_features ,extract_sms_features
 
+import joblib
+
+model = joblib.load("phishing_model.pkl")
+email_model = joblib.load("email_rf_model.pkl")
+sms_model  = joblib.load("sms_rf_model.pkl")
+vectorizer = joblib.load("sms_vectorizer.pkl")
 
 
 
@@ -22,38 +32,62 @@ def home():
 
 #url logic
 phish_words = ['login', 'verify', 'update', 'bank', 'secure', 'account']
+
+
 @app.route('/url', methods=["GET", "POST"])
 
 def form():
     result = None
-    max_score = 90 + (len(phish_words) * 10)
+  
+  
+    max_score =  10 + 10 + 10 + 10 + (len(phish_words) * 10) + 10 + 10 + 10 + 10 + 10 
     risk_percentage = 0
-    
+    ml_risk = 0
+ 
+  
+   
 
     if request.method == "POST":
         url = request.form['url']
-        score = 0
+        features = extract_features(url)
+        features = features.reshape(1 ,-1)
+
+        ml_prob = model.predict_proba(features)[0]* 100
         
+       
+     
+       
+        score = 0
+        reasons = []
+
+       
+    
 
         if "@"in url:
             score += 10
+            reasons.append("@ symbol dectected")
         
 
         if url.startswith("http://"):
+            url = "http://" + url
             score += 10
+            reasons.append("uncertain https")
            
 
         if url.count('.') > 3:
             score += 10
+            reasons.append("dot count risk")
        
 
         if len(url) > 60:
             score += 10
-           
-     
-        if any(word in url.lower() for word in phish_words):
-            score += sum(10 for word in phish_words if word in url.lower())
-         
+            reasons.append("suspicious lenght")
+
+
+        track_hits = [word for word in phish_words if word in url]
+
+        score += sum(10 for word in phish_words if word in url.lower())
+        reasons.append(f"Phishing words detected: {', '.join(track_hits)}")
 
         ext = tldextract.extract(url)
         domain = ext.domain
@@ -61,38 +95,61 @@ def form():
 
         if '-' in domain:
             score += 10
-           
+            reasons.append("- in domain dectected")
 
         if subdomain.count('.') >= 2:
             score += 10
-          
+            reasons.append("to many dot cout in subdomain dectected")
 
         if re.search(r'(\d{1,3}\.){3}\d{1,3}', url):
             score += 10
-       
+        reasons.append("unkown ip ")
 
         if url.count('/') > 5:
             score += 10
-        
+        reasons.append("to many slash count ")
 
-        if re.search(r'http[s]?://[^/]+//', url):
+        if re.match(r'http[s]?://[^/]+//', url):
             score += 10
-        
+        reasons.append("uncertain ip ")
 
         risk_percentage = round((score / max_score) * 100)
 
-        if risk_percentage >= 60:
-            result = "High Risk 🚨"
-        elif risk_percentage >= 30:
+
+        ml_risk = (ml_prob )
+        
+       
+
+     
+
+        if risk_percentage <= 30:
+            result =  "Low Risk ✅"
+        elif risk_percentage <= 60:
             result = "Medium Risk ⚠"
         else:
-            result = "Low Risk ✅"
+            result =  "High Risk 🚨"
+
+
+   
+      
+        
+
+
+
+
 
         return render_template("dashboard.html",
                                result=result,
-                               risk_percentage=risk_percentage)
+                               reasons=reasons,
+               risk_percentage=risk_percentage,
+                           ml_risk=ml_risk
+
+            
+                               )
 
     return render_template("url.html")
+
+
 
 #email logic 
 
@@ -103,8 +160,13 @@ def email_check():
     result = None
     matches = []
     email_risk_percentage = 0
+    ml_risk = 0 
+    reasons = []
+ 
+    
+   
   
-    words = ['urgent', 'verify', 'login', 'password','bank', 'account', 
+    sus_words = ['urgent', 'verify', 'login', 'password','bank', 'account', 
              'click', 'update','confirm', 'suspend', 'security alert']
 
     urgent_words = ['immediately', 'act now', 'limited time',
@@ -114,6 +176,8 @@ def email_check():
                   'debit card','cvv']
 
     if request.method == "POST":
+       
+        
 
         email_text = request.form.get('email', '')
         screenshot = request.files.get('screenshot')
@@ -124,28 +188,43 @@ def email_check():
             email_text += " " + extracted_text.lower()
 
         email_text = email_text.lower()
+        features = extract_email_features(email_text)
 
      
 
         email_score = 0
-        max_score = 30 + (len(words)*10) + (len(urgent_words)*10) + (len(info_words)*10)
+        max_score = 10 + 10 +  (len(sus_words)*10) + (len(urgent_words)*10) + (len(info_words)*10)
+        ml_prob = email_model.predict_proba([features])[0][1]*100
 
-    
-        email_score += sum(10 for word in words if word in email_text)
+
+
+
+
+
+        track_hits = [word for word in sus_words if word in email_text]
+        email_score += sum(10 for word in sus_words if word in email_text)
+        reasons.append(f"sus words detected : {', '.join(track_hits)}")
 
      
         if email_text.count("http") >= 2:
             email_score += 10
+            reasons.append("https  detected ")
 
       
         if re.search(r'\.(xyz|top|tk|gq)', email_text):
             email_score += 10
+            reasons.append("wrong username detected ")
 
-       
+
+
+
+        track_hits = [word for word in urgent_words if word in email_text]
         email_score += sum(10 for word in urgent_words if word in email_text)
+        reasons.append(f"urgent words detected: {', '.join(track_hits)}")
 
-     
+        track_hits = [word for word in info_words if word in email_text]
         email_score += sum(10 for word in info_words if word in email_text)
+        reasons.append(f"scam words  detected : {', '.join(track_hits)} ")
 
         
         matches = tool.check(email_text)
@@ -159,18 +238,21 @@ def email_check():
             email_score += 10
 
         email_risk_percentage = round((email_score / max_score) * 100)
+        ml_risk = (ml_prob)
 
-        if email_risk_percentage >= 70:
-            result = "High Risk 🚨"
-        elif email_risk_percentage >= 40:
+        if email_risk_percentage < 30:
+            result = "Low Risk ✅"
+        elif email_risk_percentage < 60:
             result = "Medium Risk ⚠"
         else:
-            result = "Low Risk ✅"
+            result =  "High Risk 🚨"
 
         return render_template("email.html",
                                email_text=email_text,
+        email_risk_percentage= email_risk_percentage,
                                result=result,
-                               email_risk_percentage=email_risk_percentage)
+                               reasons=reasons,
+                               ml_risk=ml_risk)
 
     return render_template('email.html')
 
@@ -190,6 +272,8 @@ fake_words = ["secure-login", "verify-account", "update-info"]
 def sms_check():
 
     result = None
+    reasons = []
+
 
 
     if request.method == "POST":
@@ -205,61 +289,72 @@ def sms_check():
 
 
         sms_lower = sms.lower()
+        features = extract_sms_features(sms)
         score = 0
         risk_percentage = 0
-        max_score =40 + (len(keywords)*10) + (len(short_links)*10) + (len(urgent_words)*10) + (len(fake_words)*10)
+        max_score = 10  + 10 + 10 +  (len(keywords)*10) + (len(short_links)*10) + (len(urgent_words)*10) + (len(fake_words)*10)
+        
+        ml_prob = float(sms_model.predict_proba(vectorizer.transform([sms]))[0][1]* 100)
 
 
 
 
-    
-
-
-    
-       
-        if any(word in sms.lower() for word in keywords):
-                score += sum(10 for word in keywords if word in sms.lower())
+        track_hits = [word for word in keywords if word in sms_lower]
+        score += sum(10 for word in keywords if word in sms.lower())
+        reasons.append(f"wrong keywords : {', '.join(track_hits)}")
 
         
         if re.search(r"http[s]?://|www\.", sms_lower):
             score += 10
+            reasons.append("uncertain url ")
 
-        
-        if any(word in sms.lower() for word in short_links):
-                score += sum(10 for word in short_links if word in sms.lower())
-
+            
+        track_hits = [word for word in short_links if word in sms_lower]
+        score += sum(10 for word in short_links if word in sms.lower())
+        reasons.append(f"shorts links dectects : {', '.join(track_hits)} ")
         
         digits = sum(c.isdigit() for c in sms)
         if digits > 6:
             score += 10
+            reasons.append("digit in sms ")
 
         
         if sms.isupper() and len(sms) > 15:
             score += 10
+            reasons.append("lenght of sms is suspcious ")
 
         
-        if any(word in sms.lower() for word in urgent_words):
-                score +=  sum(10 for word in urgent_words if word in sms.lower())
+        track_hits = [word for word in urgent_words if word in sms_lower]
+        score +=  sum(10 for word in urgent_words if word in sms.lower())
+        reasons.append(f"fake words detected : {', '.join(track_hits)}")
 
-        if any(word in sms.lower() for word in fake_words):
-                score +=  sum(10 for word in fake_words if word in sms.lower())
+        track_hits = [word for word in fake_words if word in sms_lower]
+        score +=  sum(10 for word in fake_words if word in sms.lower())
+        reasons.append(f"fake words detected : {', '.join(track_hits)} ")
+
+
 
 
         risk_percentage = round((score / max_score) * 100)
+        ml_risk = ml_prob
 
-        if risk_percentage >= 60:
-            result = "High Risk 🚨"
-        elif risk_percentage >= 30:
+
+
+        if risk_percentage < 30:
+            result = "Low Risk ✅"
+        elif risk_percentage < 60:
             result = "Medium Risk ⚠"
         else:
-            result = "Low Risk ✅"
+            result = "High Risk 🚨"
 
         
 
         return render_template("sms.html",
                                sms = sms ,
                                result=result,
-                               risk_percentage=risk_percentage)
+                               reasons=reasons,
+                risk_percentage=risk_percentage,
+                               ml_risk=ml_risk)
 
     return render_template("sms.html")
 
@@ -314,7 +409,6 @@ def recovery():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
 
 
 
