@@ -1,110 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Phishing Detection System</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to bottom, #0b0c10, #1f2833);
-            color: #ffffff;
-            text-align: center;
-            padding-top: 80px;
-        }
-
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-            max-width: 900px;
-            margin: auto;
-        }
-
-        .card {
-            background: #1c1f26;
-            width: 200px;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0, 200, 255, 0.4);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 25px rgba(0, 200, 255, 0.7);
-        }
-
-        h2 {
-            margin-bottom: 40px;
-            font-size: 28px;
-            color: #66fcf1;
-        }
-
-        h3 {
-            margin-bottom: 10px;
-            color: #45a29e;
-        }
-
-        p {
-            font-size: 14px;
-            color: #c5c6c7;
-            margin-bottom: 15px;
-        }
-
-        a {
-            text-decoration: none;
-        }
-
-        button {
-            width: 100%;
-            padding: 10px;
-            font-size: 14px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 6px;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhishSence</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#02071e;color:#cfefff;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;overflow:scroll;}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,255,.08) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;animation:moveGrid 24s linear infinite}
+@keyframes moveGrid{0%{background-position:0 0}100%{background-position:40px 40px}}
+.logo{font-size:3rem;font-weight:700;letter-spacing:.15em;color:#00ffff;text-shadow:0 0 20px #00ffff,0 0 40px #00ffff,0 0 80px rgba(0,255,255,.4);margin-bottom:.5rem}
+.tagline{font-size:.95rem;color:#7df1ff;letter-spacing:.2em;text-transform:uppercase;margin-bottom:3rem;text-shadow:0 0 10px rgba(0,255,255,.4)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;width:100%;max-width:700px;padding:0 1rem;margin-bottom:2rem}
+.card{background:#071a2e;border:2px solid rgba(0,255,255,.35);border-radius:12px;padding:1.5rem 1rem;text-align:center;text-decoration:none;color:#e3faff;transition:all .3s;position:relative;overflow:hidden;box-shadow:0 0 20px rgba(0,255,255,.12)}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,255,255,.1),transparent);opacity:0;transition:.3s}
+.card:hover{border-color:#00d7ff;color:#ffffff;transform:translateY(-4px);box-shadow:0 0 25px rgba(0,214,255,.4),inset 0 0 20px rgba(0,255,255,.08)}
+.card:hover::before{opacity:1}
+.card-icon{font-size:1.6rem;margin-bottom:.6rem;display:block}
+.card-label{font-size:.85rem;letter-spacing:.15em;text-transform:uppercase;color:inherit}
+.accent{color:#00ffff;text-shadow:0 0 10px #00ffff}
+.about-box{background:#071a2e;border:2px solid rgba(0,255,255,.35);border-radius:12px;padding:1.5rem;color:#ffffff;font-size:0.9rem;line-height:1.6;max-width:700px;margin-top:1rem;box-shadow:0 0 20px rgba(0,255,255,.12)}
+.about-box strong{color:#00ffff}
+footer{position:fixed;bottom:1rem;font-size:.75rem;color:#8bdcff;letter-spacing:.1em;text-shadow:0 0 8px rgba(0,255,255,.25)}
+</style>
 </head>
 <body>
+<div class="grid-bg"></div>
+<div class="logo">PHISH<span style="color:#fff">SENCE</span></div>
+<div class="tagline">Detect &bull; Analyse &bull; Recover</div>
 
-<h2>Phishing Detection System</h2>
-
-<div class="container">
-    <!-- URL Detection Card -->
-    <div class="card">
-        <h3>🌐 URL Detection</h3>
-        <p>Analyze suspicious links and detect phishing websites instantly.</p>
-        <a href="/url"><button>Check URL</button></a>
-    </div>
-
-    <!-- Email Detection Card -->
-    <div class="card">
-        <h3>📧 Email Detection</h3>
-        <p>Scan emails for phishing attempts and malicious attachments.</p>
-        <a href="/email"><button>Check Email</button></a>
-    </div>
-
-    <!-- SMS Detection Card -->
-    <div class="card">
-        <h3>📱 SMS Detection</h3>
-        <p>Identify fraudulent SMS messages and protect your data.</p>
-        <a href="/sms"><button>Check SMS</button></a>
-    </div>
-
-    <!-- Recovery System Card -->
-    <div class="card">
-        <h3>🔒 Recovery Info</h3>
-        <p>Recover from phishing attacks and secure your accounts.</p>
-        <a href="/recovery"><button>Get Recovery Info</button></a>
-    </div>
+<div class="cards">
+  <a href="{{ url_for('form') }}" class="card">
+    <span class="card-icon">🔗</span>
+    <span class="card-label">URL Check</span>
+  </a>
+  <a href="{{ url_for('email_check') }}" class="card">
+    <span class="card-icon">📧</span>
+    <span class="card-label">Email Check</span>
+  </a>
+  <a href="{{ url_for('sms_check') }}" class="card">
+    <span class="card-icon">💬</span>
+    <span class="card-label">SMS Check</span>
+  </a>
+    <a href="{{ url_for('recovery') }}" class="card" style="grid-column:2">
+    <span class="card-icon">🛡</span>
+    <span class="card-label">Recovery</span>
+  </a>
 </div>
 
+<div class="about-box">
+  <strong>About Phishing:</strong><br>
+  • Phishing is a cyber attack using fraudulent emails, messages, or websites to steal personal and financial information<br>
+  • Attackers impersonate trusted organizations to trick users into revealing passwords, credit cards, or account details<br>
+  • Common signs include suspicious sender addresses, urgent requests, spelling errors, and links to duplicate websites<br>
+  • Always verify URLs before clicking and enable two-factor authentication for critical accounts<br>
+  • Use PhishSence tools to check suspicious links and emails before engaging with them
+</div>
+
+<footer>PHISHSENCE &copy; 2026</footer>
 </body>
 </html>
 
