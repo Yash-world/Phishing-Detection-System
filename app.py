@@ -159,7 +159,7 @@ def email_check():
 
     result = None
     matches = []
-    email_risk_percentage = 0
+    risk_percentage = 0
     ml_risk = 0 
     reasons = []
  
@@ -238,18 +238,18 @@ def email_check():
             email_score += 10
 
         email_risk_percentage = round((email_score / max_score) * 100)
-        ml_risk = (ml_prob)
+        ml_risk = (ml_prob , 2)
 
-        if email_risk_percentage < 30:
+        if risk_percentage < 30:
             result = "Low Risk ✅"
-        elif email_risk_percentage < 60:
+        elif risk_percentage < 60:
             result = "Medium Risk ⚠"
         else:
             result =  "High Risk 🚨"
 
-        return render_template("email.html",
+        return render_template("dashboard.html",
                                email_text=email_text,
-        email_risk_percentage= email_risk_percentage,
+                  risk_percentage=risk_percentage,
                                result=result,
                                reasons=reasons,
                                ml_risk=ml_risk)
@@ -336,7 +336,7 @@ def sms_check():
 
 
         risk_percentage = round((score / max_score) * 100)
-        ml_risk = ml_prob
+        ml_risk = (ml_prob,2)
 
 
 
@@ -349,7 +349,7 @@ def sms_check():
 
         
 
-        return render_template("sms.html",
+        return render_template("dashboard.html",
                                sms = sms ,
                                result=result,
                                reasons=reasons,
