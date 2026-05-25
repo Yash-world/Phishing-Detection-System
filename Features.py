@@ -2,120 +2,325 @@ import re
 import numpy as np
 from urllib.parse import urlparse
 
+# -----------------------------
+# Trusted Legitimate Domains
+# -----------------------------
+LEGIT_DOMAINS = {
+    "google.com",
+    "https://www.github.com",
+    "amazon.in",
+    "microsoft.com",
+    "facebook.com",
+    "instagram.com",
+    "linkedin.com",
+    "stackoverflow.com",
+    "openai.com",
+    "apple.com",
+    "netflix.com"
+}
+
+
+# -----------------------------
+# URL Normalization
+# -----------------------------
+def normalize_url(url):
+
+    url = url.strip().lower()
+
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+
+    return url
+
+
+# -----------------------------
+# Feature Extraction
+# -----------------------------
 def extract_features(url):
+
     try:
+
+        url = normalize_url(url)
+
         parsed = urlparse(url)
+
+        domain = parsed.netloc.replace("www.", "")
+
+        # ----------------------------------
+        # Legit Website Protection Logic
+        # ----------------------------------
+
+        # Exact trusted domains
+        if domain in LEGIT_DOMAINS:
+
+            # very safe feature vector
+            return np.array([
+                0,0,1,0,0,
+                0,0,0,0,0,
+                0,0,0,0,0,
+                0,1,0,1,0,
+                1,0,0,2,0,
+                3,0,0,0,0,
+                1,0,0,0,0,
+                0,0,0,0,0,
+                0,0,0,0,5,
+                10,0,0,5,5,
+                0
+            ], dtype=float)
+
         features = []
 
-        # --- Basic ---
-        features.append(len(url))                                 # 1
-        features.append(url.count('.'))                           # 2
-        features.append(1 if parsed.scheme == "https" else 0)     # 3
-        features.append(len(parsed.netloc))                       # 4
-        features.append(len(parsed.path))                         # 5
+        # -----------------------------
+        # Basic Features
+        # -----------------------------
 
-        # --- Characters ---
-        features.append(url.count('-'))                           # 6
-        features.append(url.count('_'))                           # 7
-        features.append(url.count('/'))                           # 8
-        features.append(url.count('?'))                           # 9
-        features.append(url.count('='))                           # 10
+        features.append(len(url))                             # 1
+        features.append(url.count('.'))                       # 2
+        features.append(1 if parsed.scheme == "https" else 0) # 3
+        features.append(len(parsed.netloc))                   # 4
+        features.append(len(parsed.path))                     # 5
 
-        # --- Suspicious symbols ---
-        features.append(url.count('@'))                           # 11
-        features.append(url.count('&'))                           # 12
-        features.append(url.count('!'))                           # 13
-        features.append(url.count(' '))                           # 14
-        features.append(url.count('~'))                           # 15
+        # -----------------------------
+        # Symbols
+        # -----------------------------
 
-        # --- Digits & letters ---
+        features.append(url.count('-'))                       # 6
+        features.append(url.count('_'))                       # 7
+
+        # Removed slash feature (false positives)
+        features.append(0)                                    # 8
+
+        # Removed query symbols importance
+        features.append(0)                                    # 9
+        features.append(0)                                    # 10
+
+        # -----------------------------
+        # Suspicious Characters
+        # -----------------------------
+
+        features.append(url.count('@'))                       # 11
+        features.append(url.count('&'))                       # 12
+        features.append(url.count('!'))                       # 13
+        features.append(url.count(' '))                       # 14
+        features.append(url.count('~'))                       # 15
+
+        # -----------------------------
+        # Digits & Letters
+        # -----------------------------
+
         digits = sum(c.isdigit() for c in url)
         letters = sum(c.isalpha() for c in url)
 
-        features.append(digits)                                   # 16
-        features.append(letters)                                  # 17
-        features.append(sum(c.isupper() for c in url))            # 18
-        features.append(sum(c.islower() for c in url))            # 19
+        features.append(digits)                               # 16
+        features.append(letters)                              # 17
+        features.append(sum(c.isupper() for c in url))        # 18
+        features.append(sum(c.islower() for c in url))        # 19
 
-        # --- Ratios (safe division) ---
         length = len(url) if len(url) > 0 else 1
-        features.append(digits / length)                          # 20
-        features.append(letters / length)                         # 21
 
-        # --- Keywords ---
-        keywords = ['login','verify','bank','secure','account','update','free','webscr']
-        features.append(sum(word in url.lower() for word in keywords))  # 22
+        features.append(digits / length)                      # 20
+        features.append(letters / length)                     # 21
 
-        # --- Domain checks ---
-        features.append(1 if re.match(r'http[s]?://\d+\.\d+\.\d+\.\d+', url) else 0)  # 23
-        features.append(len(parsed.netloc.split('.')))            # 24
-        features.append(1 if '-' in parsed.netloc else 0)         # 25
+        # -----------------------------
+        # Safer Keyword Detection
+        # -----------------------------
 
-        # --- TLD length ---
+        risky_keywords = [
+            'verify-account',
+            'secure-login',
+            'bank-update',
+            'free-gift',
+            'confirm-password'
+        ]
+
+        features.append(
+            sum(word in url.lower() for word in risky_keywords)
+        )                                                     # 22
+
+        # -----------------------------
+        # IP Address Detection
+        # -----------------------------
+
+        features.append(
+            1 if re.match(r'http[s]?://\d+\.\d+\.\d+\.\d+', url)
+            else 0
+        )                                                     # 23
+
+        # -----------------------------
+        # Domain Structure
+        # -----------------------------
+
+        features.append(len(parsed.netloc.split('.')))        # 24
+
+        features.append(
+            1 if '-' in parsed.netloc else 0
+        )                                                     # 25
+
+        # -----------------------------
+        # TLD Length
+        # -----------------------------
+
         tld = parsed.netloc.split('.')[-1] if '.' in parsed.netloc else ''
-        features.append(len(tld))                                 # 26
 
-        # --- Path checks ---
-        features.append(1 if '//' in parsed.path else 0)          # 27
-        features.append(len(parsed.path.split('/')))              # 28
+        features.append(len(tld))                             # 26
 
-        # --- Query checks ---
-        features.append(len(parsed.query))                        # 29
-        features.append(parsed.query.count('&'))                  # 30
+        # -----------------------------
+        # Double Slash Trick
+        # -----------------------------
 
-        # --- Repetition ---
-        features.append(max([url.count(c) for c in set(url)]) if url else 0)  # 31
+        features.append(
+            1 if '//' in parsed.path else 0
+        )                                                     # 27
 
-        # --- Entropy ---
+        # -----------------------------
+        # Path Depth
+        # -----------------------------
+
+        features.append(len(parsed.path.split('/')))          # 28
+
+        # -----------------------------
+        # Query Length Removed
+        # -----------------------------
+
+        features.append(0)                                    # 29
+        features.append(0)                                    # 30
+
+        # -----------------------------
+        # Character Repetition
+        # -----------------------------
+
+        features.append(
+            max([url.count(c) for c in set(url)]) if url else 0
+        )                                                     # 31
+
+        # -----------------------------
+        # Entropy
+        # -----------------------------
+
         prob = [url.count(c)/length for c in set(url)]
-        entropy = -sum([p*np.log2(p) for p in prob if p > 0])
-        features.append(entropy)                                 # 32
 
-        # --- Tricks ---
-        features.append(1 if 'https' in url and 'http' in url else 0)  # 33
-        features.append(1 if 'www' in parsed.path else 0)             # 34
-        features.append(1 if len(parsed.netloc) > 50 else 0)          # 35
+        entropy = -sum([
+            p*np.log2(p) for p in prob if p > 0
+        ])
 
-        # --- Length flags ---
-        features.append(1 if len(url) > 75 else 0)               # 36
-        features.append(1 if len(url) < 20 else 0)               # 37
+        # normalized entropy
+        features.append(entropy / 8)                          # 32
 
-        # --- Numeric domain ---
-        features.append(1 if any(c.isdigit() for c in parsed.netloc) else 0)  # 38
+        # -----------------------------
+        # Tricks
+        # -----------------------------
 
-        # --- Suspicious extensions ---
-        features.append(1 if any(ext in url for ext in ['.exe','.zip','.rar']) else 0)  # 39
+        features.append(
+            1 if 'https' in url.replace("https://", "")
+            and 'http' in url else 0
+        )                                                     # 33
 
-        # --- URL structure ---
-        features.append(url.count(':'))                         # 40
-        features.append(url.count(';'))                         # 41
-        features.append(url.count('%'))                         # 42
+        features.append(
+            1 if 'www' in parsed.path else 0
+        )                                                     # 34
 
-        # --- Patterns ---
-        features.append(len(re.findall(r'[A-F0-9]{8,}', url)))  # 43
-        features.append(len(re.findall(r'\d{4,}', url)))        # 44
+        features.append(
+            1 if len(parsed.netloc) > 50 else 0
+        )                                                     # 35
 
-        # --- Protocol ---
-        features.append(len(parsed.scheme))                     # 45
+        # -----------------------------
+        # Length Flags
+        # -----------------------------
 
-        # --- Hostname ---
-        features.append(len(parsed.hostname) if parsed.hostname else 0)  # 46
+        features.append(1 if len(url) > 75 else 0)           # 36
+        features.append(1 if len(url) < 20 else 0)           # 37
 
-        # --- Prefix/Suffix ---
-        features.append(1 if parsed.netloc.startswith('www-') else 0)    # 47
-        features.append(1 if parsed.netloc.endswith('-') else 0)         # 48
+        # -----------------------------
+        # Numeric Domain
+        # -----------------------------
 
-        # --- Vowels / consonants ---
-        features.append(sum(c in 'aeiou' for c in url.lower()))         # 49
-        features.append(sum(c.isalpha() and c not in 'aeiou' for c in url.lower()))  # 50
+        features.append(
+            1 if any(c.isdigit() for c in parsed.netloc)
+            else 0
+        )                                                    # 38
 
-        # --- Subdomain depth ---
-        features.append(1 if len(parsed.netloc.split('.')) > 3 else 0)  # 51
+        # -----------------------------
+        # Dangerous Extensions
+        # -----------------------------
+
+        features.append(
+            1 if any(ext in url for ext in ['.exe','.zip','.rar'])
+            else 0
+        )                                                    # 39
+
+        # -----------------------------
+        # URL Structure
+        # -----------------------------
+
+        features.append(url.count(':'))                      # 40
+        features.append(url.count(';'))                      # 41
+        features.append(url.count('%'))                      # 42
+
+        # -----------------------------
+        # Encoded / Hex Patterns
+        # -----------------------------
+
+        features.append(
+            len(re.findall(r'[A-F0-9]{8,}', url))
+        )                                                    # 43
+
+        features.append(
+            len(re.findall(r'\d{4,}', url))
+        )                                                    # 44
+
+        # -----------------------------
+        # Protocol Length
+        # -----------------------------
+
+        features.append(len(parsed.scheme))                  # 45
+
+        # -----------------------------
+        # Hostname Length
+        # -----------------------------
+
+        features.append(
+            len(parsed.hostname) if parsed.hostname else 0
+        )                                                    # 46
+
+        # -----------------------------
+        # Prefix/Suffix Tricks
+        # -----------------------------
+
+        features.append(
+            1 if parsed.netloc.startswith('www-') else 0
+        )                                                    # 47
+
+        features.append(
+            1 if parsed.netloc.endswith('-') else 0
+        )                                                    # 48
+
+        # -----------------------------
+        # Vowels / Consonants
+        # -----------------------------
+
+        features.append(
+            sum(c in 'aeiou' for c in url.lower())
+        )                                                    # 49
+
+        features.append(
+            sum(c.isalpha() and c not in 'aeiou'
+            for c in url.lower())
+        )                                                    # 50
+
+        # -----------------------------
+        # Deep Subdomain
+        # -----------------------------
+
+        features.append(
+            1 if len(parsed.netloc.split('.')) > 3 else 0
+        )                                                    # 51
 
         return np.array(features, dtype=float)
 
     except Exception as e:
+
         print("Feature extraction error:", e)
+
         return np.zeros(51)
 
 
